@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  student-service:
+    build: .
+    container_name: student-service
+    command: python 1-student_service.py
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  teacher-service:
+    build: .
+    container_name: teacher-service
+    command: python 2-teacher_service.py
+    ports:
+      - "5002:5002"
+    restart: unless-stopped
+
+  schedule-service:
+    build: .
+    container_name: schedule-service
+    command: python 4-schedule_service.py
+    ports:
+      - "5003:5003"
+    restart: unless-stopped
+
+  grade-service:
+    build: .
+    container_name: grade-service
+    command: python 5-grade_service.py
+    ports:
+      - "5004:5004"
+    restart: unless-stopped
+
+  retake-service:
+    build: .
+    container_name: retake-service
+    command: python 6-retake_service.py
+    ports:
+      - "5005:5005"
+    restart: unless-stopped
+
+  payment-service:
+    build: .
+    container_name: payment-service
+    command: python 7-payment_service.py
+    ports:
+      - "5006:5006"
+    restart: unless-stopped
+
+  instruction-service:
+    build: .
+    container_name: instruction-service
+    command: python 8-instruction_service.py
+    ports:
+      - "5007:5007"
+    restart: unless-stopped
+
+  api-gateway:
+    build: .
+    container_name: api-gateway
+    command: uvicorn 3-api-gateway:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - student-service
+      - teacher-service
+      - schedule-service
+      - grade-service
+      - retake-service
+      - payment-service
+      - instruction-service
+    restart: unless-stopped
+

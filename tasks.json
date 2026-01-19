@@ -1,0 +1,68 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "1. Запуск Student Service (5001)",
+            "type": "shell",
+            // Использование python3 для macOS (замените на "python", если ваше venv так настроено)
+            "command": "python3 1-student_service.py", 
+            "isBackground": true,
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "2. Запуск Teacher Service (5002)",
+            "type": "shell",
+            "command": "python3 2-teacher_service.py",
+            "isBackground": true,
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "3. Запуск Schedule Service (5003)",
+            "type": "shell",
+            "command": "python3 4-schedule_service.py",
+            "isBackground": true,
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "4. Запуск API Gateway (8000)",
+            "type": "shell",
+            // Команда для запуска FastAPI/Uvicorn
+            "command": "uvicorn 3-api-gateway:app --reload --port 8000",
+            "isBackground": true,
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Запустить ВСЕ Сервисы",
+            "dependsOn": [
+                "1. Запуск Student Service (5001)",
+                "2. Запуск Teacher Service (5002)",
+                "3. Запуск Schedule Service (5003)",
+                "4. Запуск API Gateway (8000)"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        }
+    ]
+}

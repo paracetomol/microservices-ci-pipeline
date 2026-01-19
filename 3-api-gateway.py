@@ -1,0 +1,245 @@
+# Реализация шлюза API Gateway
+
+from fastapi import FastAPI, HTTPException
+import httpx
+import logging
+
+# Настройка логирования для вывода информации о запросах
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+app = FastAPI(title="API Gateway Университета", version="1.0.0")
+
+# Конфигурация URL микросервисов (ПОРТЫ ДОЛЖНЫ СОВПАДАТЬ С ВАШИМИ СЕРВИСАМИ)
+STUDENT_SERVICE     = "http://127.0.0.1:5001" 
+TEACHER_SERVICE     = "http://127.0.0.1:5002"
+SCHEDULE_SERVICE    = "http://127.0.0.1:5003" 
+GRADE_SERVICE       = "http://127.0.0.1:5004"
+RETAKE_SERVICE      = "http://127.0.0.1:5005" 
+PAYMENT_SERVICE     = "http://127.0.0.1:5006"
+INSTRUCTION_SERVICE = "http://127.0.0.1:5007"
+# SERVICES_URLS = { ... } # Можно использовать словарь для масштабирования
+
+TIMEOUT = 5.0 # Таймаут для запросов
+
+# --- Маршруты для СТУДЕНТОВ (Student Service) ---
+
+@app.get("/students", tags=["Студенты"])
+async def get_students():
+    logging.info("Request received: GET /students")
+    try:
+        # Асинхронный HTTP-клиент для запроса к бэкенду
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.get(f'{STUDENT_SERVICE}/students')
+            response.raise_for_status() # Вызывает исключение при ошибках HTTP (4xx или 5xx)
+            return response.json()
+    except httpx.HTTPError as e:
+        logging.error(f"Student service error: {e}")
+        # Возвращаем ошибку 503 (Service Unavailable)
+        raise HTTPException(status_code=503, detail=f"Student service unavailable: {str(e)}")
+
+@app.get("/students/{student_id}", tags=["Студенты"])
+async def get_student(student_id: int):
+    logging.info(f"Request received: GET /students/{student_id}")
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.get(f'{STUDENT_SERVICE}/students/{student_id}')
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Student not found")
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        logging.error(f"Student service error: {e}")
+        raise HTTPException(status_code=503, detail=f"Student service error: {str(e)}")
+
+# --- Маршруты для ПРЕПОДАВАТЕЛЕЙ (Teacher Service) ---
+
+@app.get("/teachers", tags=["Преподаватели"])
+async def get_teachers():
+    logging.info("Request received: GET /teachers")
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.get(f'{TEACHER_SERVICE}/teachers')
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        logging.error(f"Teacher service error: {e}")
+        raise HTTPException(status_code=503, detail=f"Teacher service unavailable: {str(e)}")
+
+@app.post("/teachers", tags=["Преподаватели"])
+async def create_teacher(teacher: dict):
+    logging.info("Request received: POST /teachers")
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.post(f'{TEACHER_SERVICE}/teachers', json=teacher)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        logging.error(f"Teacher service error: {e}")
+        raise HTTPException(status_code=503, detail=f"Teacher service error: {str(e)}")
+        
+# --- Маршруты для РАСПИСАНИЯ (Schedule Service) ---
+
+@app.get("/schedule", tags=["Расписание"])
+async def get_schedule(group: str = None, teacher_id: int = None):
+    """Получить расписание с фильтрацией по группе или ID преподавателя."""
+    logging.info("Request received: GET /schedule")
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            # Передаем query-параметры (group, teacher_id)
+            params = {}
+            if group:
+                params['group'] = group
+            if teacher_id:
+                params['teacher_id'] = teacher_id
+
+            response = await client.get(f'{SCHEDULE_SERVICE}/schedule', params=params)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        logging.error(f"Schedule service error: {e}")
+        raise HTTPException(status_code=503, detail=f"Schedule service unavailable: {str(e)}")
+
+@app.post("/schedule", tags=["Расписание"])
+async def create_schedule_item(item: dict):
+    """Создать новую запись расписания."""
+    logging.info("Request received: POST /schedule")
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.post(f'{SCHEDULE_SERVICE}/schedule', json=item)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        logging.error(f"Schedule service error: {e}")
+        raise HTTPException(status_code=503, detail=f"Schedule service error: {str(e)}")
+    
+# --- Маршруты для УСПЕВАЕМОСТИ (Grade Service) ---
+
+@app.get("/grade", tags=["Успеваемость"])
+async def get_grades(student_id: int = None):
+    """
+    Получить список оценок. Поддерживает фильтрацию по ID студента.
+    Маршрут перенаправляет запрос на порт 5004.
+    """
+    logging.info("Request received: GET /grade")
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            # Передаем query-параметр student_id
+            params = {}
+            if student_id is not None:
+                params['student_id'] = student_id
+
+            response = await client.get(f'{GRADE_SERVICE}/grade', params=params)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        logging.error(f"Grade service error: {e}")
+        raise HTTPException(status_code=503, detail=f"Grade service unavailable: {str(e)}")
+
+@app.post("/grade", tags=["Успеваемость"])
+async def create_grade(grade_data: dict):
+    """
+    Создать новую запись об оценке. 
+    Маршрут перенаправляет POST-запрос на порт 5004.
+    """
+    logging.info("Request received: POST /grade")
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.post(f'{GRADE_SERVICE}/grade', json=grade_data)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        logging.error(f"Grade service error: {e}")
+        raise HTTPException(status_code=503, detail=f"Grade service error: {str(e)}")   
+
+# --- Маршруты для ПЕРЕСДАЧ (Retake Service) ---
+
+@app.get("/retake", tags=["Пересдачи"])
+async def get_retakes(student_id: int = None):
+    """Получить список пересдач (фильтр по student_id). UC-6."""
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            params = {}
+            if student_id is not None:
+                params['student_id'] = student_id
+            
+            response = await client.get(f'{RETAKE_SERVICE}/retake', params=params)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=503, detail=f"Retake service unavailable: {str(e)}")
+
+@app.get("/retake/all", tags=["Пересдачи"])
+async def get_all_retakes():
+    """Получить полный список пересдач (для админа/преподавателя). UC-07."""
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.get(f'{RETAKE_SERVICE}/retake/all')
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=503, detail=f"Retake service unavailable: {str(e)}")
+        
+@app.post("/retake", tags=["Пересдачи"])
+async def create_retake(retake_data: dict):
+    """Записаться на пересдачу. UC-3."""
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.post(f'{RETAKE_SERVICE}/retake', json=retake_data)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=503, detail=f"Retake service error: {str(e)}")
+
+# --- Маршруты для ОПЛАТЫ (Payment Service) ---
+
+@app.get("/payment", tags=["Оплата"])
+async def get_payments(student_id: int = None):
+    """Получить историю платежей (фильтр по student_id)."""
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            params = {}
+            if student_id is not None:
+                params['student_id'] = student_id
+            
+            response = await client.get(f'{PAYMENT_SERVICE}/payment', params=params)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=503, detail=f"Payment service unavailable: {str(e)}")
+
+@app.post("/payment", tags=["Оплата"])
+async def create_payment(payment_data: dict):
+    """Создать новый платеж (имитация оплаты). UC-4."""
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.post(f'{PAYMENT_SERVICE}/payment', json=payment_data)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=503, detail=f"Payment service error: {str(e)}")
+
+# --- Маршруты для ИНСТРУКЦИЙ (Instruction Service) ---
+
+@app.get("/instruction", tags=["Инструкции"])
+async def get_instructions():
+    """Получить список всех инструкций и документов. UC-5."""
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.get(f'{INSTRUCTION_SERVICE}/instruction')
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=503, detail=f"Instruction service unavailable: {str(e)}")
+
+@app.get("/instruction/{instruction_id}", tags=["Инструкции"])
+async def get_instruction(instruction_id: int):
+    """Получить конкретную инструкцию по ID."""
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.get(f'{INSTRUCTION_SERVICE}/instruction/{instruction_id}')
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Instruction not found")
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=503, detail=f"Instruction service error: {str(e)}")

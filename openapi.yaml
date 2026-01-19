@@ -1,0 +1,304 @@
+openapi: 3.0.4
+info:
+  title: REST API информационной системы университета
+  description: >
+    API предназначено для взаимодействия студентов, преподавателей и администратора 
+    с системой университета. Позволяет просматривать расписание, успеваемость, 
+    управлять пересдачами, оплатами и информацией о преподавателях.
+  version: 1.0.0
+servers:
+  - url: https://university-system.example.com/api/v1
+    description: Основной сервер университета
+
+tags:
+  - name: Расписание
+    description: Работа с расписанием занятий
+  - name: Успеваемость
+    description: Просмотр и управление оценками студентов
+  - name: Пересдачи
+    description: Работа с пересдачами
+  - name: Оплата
+    description: Проведение и просмотр оплат за обучение
+  - name: Преподаватели
+    description: Управление данными о преподавателях
+  - name: Инструкции
+    description: Просмотр справочной информации и документов
+
+paths:
+  /schedule:
+    get:
+      tags: [Расписание]
+      summary: Просмотр расписания
+      description: Возвращает расписание занятий по группе или преподавателю.
+      parameters:
+        - name: group
+          in: query
+          description: Учебная группа
+          required: false
+          schema:
+            type: string
+        - name: teacher_id
+          in: query
+          description: Идентификатор преподавателя
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Schedule"
+
+  /grade:
+    get:
+      tags: [Успеваемость]
+      summary: Просмотр успеваемости
+      description: Возвращает список оценок студента.
+      parameters:
+        - name: student_id
+          in: query
+          description: Идентификатор студента
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Список оценок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Grade"
+
+  /retake:
+    get:
+      tags: [Пересдачи]
+      summary: Список пересдач студента
+      description: Отображает пересдачи, запланированные студентом.
+      parameters:
+        - name: student_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Список пересдач
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Retake"
+
+    post:
+      tags: [Пересдачи]
+      summary: Записаться на пересдачу
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Retake"
+      responses:
+        "201":
+          description: Пересдача успешно добавлена
+
+  /payment:
+    post:
+      tags: [Оплата]
+      summary: Оплатить обучение
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Payment"
+      responses:
+        "201":
+          description: Оплата успешно проведена
+
+  /teacher:
+    post:
+      tags: [Преподаватели]
+      summary: Добавить преподавателя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Teacher"
+      responses:
+        "201":
+          description: Преподаватель успешно добавлен
+
+  /teacher/{id}:
+    put:
+      tags: [Преподаватели]
+      summary: Изменить данные преподавателя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Teacher"
+      responses:
+        "200":
+          description: Данные преподавателя обновлены
+
+    delete:
+      tags: [Преподаватели]
+      summary: Удалить преподавателя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Преподаватель удалён
+
+  /instruction:
+    get:
+      tags: [Инструкции]
+      summary: Просмотр инструкций
+      responses:
+        "200":
+          description: Список доступных инструкций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Instruction"
+
+components:
+  schemas:
+    Student:
+      type: object
+      properties:
+        id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        group:
+          type: string
+        faculty:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        balance:
+          type: number
+
+    Teacher:
+      type: object
+      properties:
+        id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        department:
+          type: string
+        position:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        teacher:
+          $ref: "#/components/schemas/Teacher"
+        group:
+          type: string
+        day:
+          type: string
+        time:
+          type: string
+        auditorium:
+          type: string
+
+    Grade:
+      type: object
+      properties:
+        id:
+          type: integer
+        student:
+          $ref: "#/components/schemas/Student"
+        subject:
+          type: string
+        teacher:
+          $ref: "#/components/schemas/Teacher"
+        grade:
+          type: string
+        date:
+          type: string
+          format: date
+
+    Retake:
+      type: object
+      properties:
+        id:
+          type: integer
+        student:
+          $ref: "#/components/schemas/Student"
+        subject:
+          type: string
+        status:
+          type: string
+        date:
+          type: string
+          format: date
+        teacher:
+          $ref: "#/components/schemas/Teacher"
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+        student:
+          $ref: "#/components/schemas/Student"
+        amount:
+          type: number
+        date:
+          type: string
+          format: date
+        status:
+          type: string
+
+    Instruction:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        file_url:
+          type: string
