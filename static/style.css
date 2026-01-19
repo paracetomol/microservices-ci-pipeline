@@ -1,0 +1,174 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: white;
+    padding: 10px;
+    color: #000;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border: 1px solid #000;
+}
+
+header {
+    background: #000;
+    color: white;
+    padding: 15px;
+    border-bottom: 1px solid #000;
+}
+
+header h1 {
+    font-size: 1.5em;
+}
+
+.subtitle {
+    font-size: 0.85em;
+    color: #ccc;
+    margin-top: 5px;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #000;
+}
+
+.tab-btn {
+    padding: 10px 15px;
+    border: none;
+    border-right: 1px solid #000;
+    background: white;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.tab-btn:last-child {
+    border-right: none;
+}
+
+.tab-btn:hover {
+    background: #f0f0f0;
+}
+
+.tab-btn.active {
+    background: #000;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+    padding: 15px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.section-header {
+    margin-bottom: 15px;
+}
+
+.section-header h2 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.filters {
+    margin-bottom: 15px;
+}
+
+.filters input {
+    padding: 5px;
+    border: 1px solid #000;
+    margin-right: 10px;
+    width: 200px;
+}
+
+.btn {
+    padding: 5px 10px;
+    border: 1px solid #000;
+    background: white;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.btn:hover {
+    background: #f0f0f0;
+}
+
+.data-list {
+    border: 1px solid #000;
+}
+
+.data-card {
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
+}
+
+.data-card:last-child {
+    border-bottom: none;
+}
+
+.data-card h3 {
+    font-size: 1em;
+    margin-bottom: 5px;
+}
+
+.data-card .field {
+    margin: 3px 0;
+    font-size: 0.9em;
+}
+
+.data-card .field-label {
+    font-weight: bold;
+    display: inline-block;
+    width: 120px;
+}
+
+.empty-state {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
+.error-message {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #f00;
+    color: white;
+    padding: 10px;
+    border: 1px solid #000;
+}
+
+.loading {
+    padding: 20px;
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab-btn {
+        flex: 1;
+        min-width: 100px;
+    }
+
+    .filters input {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}

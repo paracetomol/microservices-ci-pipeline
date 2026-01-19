@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>API Gateway</title>
+</head>
+<body>
+    <h1>API Gateway</h1>
+    
+    <div>
+        <button onclick="showTab('students')">Студенты</button>
+        <button onclick="showTab('teachers')">Преподаватели</button>
+        <button onclick="showTab('schedule')">Расписание</button>
+        <button onclick="showTab('grades')">Оценки</button>
+        <button onclick="showTab('retakes')">Пересдачи</button>
+        <button onclick="showTab('payments')">Оплата</button>
+    </div>
+    
+    <hr>
+    
+    <div id="students" style="display:block">
+        <h2>Студенты</h2>
+        <button onclick="loadStudents()">Загрузить</button>
+        <div id="students-list"></div>
+    </div>
+    
+    <div id="teachers" style="display:none">
+        <h2>Преподаватели</h2>
+        <button onclick="loadTeachers()">Загрузить</button>
+        <div id="teachers-list"></div>
+    </div>
+    
+    <div id="schedule" style="display:none">
+        <h2>Расписание</h2>
+        <input type="text" id="schedule-group" placeholder="Группа">
+        <input type="number" id="schedule-teacher" placeholder="ID преподавателя">
+        <button onclick="loadSchedule()">Загрузить</button>
+        <div id="schedule-list"></div>
+    </div>
+    
+    <div id="grades" style="display:none">
+        <h2>Оценки</h2>
+        <input type="number" id="grade-student" placeholder="ID студента">
+        <button onclick="loadGrades()">Загрузить</button>
+        <div id="grades-list"></div>
+    </div>
+    
+    <div id="retakes" style="display:none">
+        <h2>Пересдачи</h2>
+        <input type="number" id="retake-student" placeholder="ID студента">
+        <button onclick="loadRetakes()">Загрузить</button>
+        <button onclick="loadAllRetakes()">Все</button>
+        <div id="retakes-list"></div>
+    </div>
+    
+    <div id="payments" style="display:none">
+        <h2>Оплата</h2>
+        <input type="number" id="payment-student" placeholder="ID студента">
+        <button onclick="loadPayments()">Загрузить</button>
+        <div id="payments-list"></div>
+    </div>
+    
+    <div id="error-message" style="display:none; color:red"></div>
+    <div id="loading" style="display:none">Загрузка...</div>
+    
+    <script>
+        function showTab(tab) {
+            document.getElementById('students').style.display = 'none';
+            document.getElementById('teachers').style.display = 'none';
+            document.getElementById('schedule').style.display = 'none';
+            document.getElementById('grades').style.display = 'none';
+            document.getElementById('retakes').style.display = 'none';
+            document.getElementById('payments').style.display = 'none';
+            document.getElementById(tab).style.display = 'block';
+        }
+        
+        async function loadStudents() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                const response = await fetch('/students');
+                const data = await response.json();
+                let html = '<ul>';
+                for (let s of data) {
+                    html += '<li>ID: ' + s.id + ', ' + s.first_name + ' ' + s.last_name + ', Группа: ' + s.group + '</li>';
+                }
+                html += '</ul>';
+                document.getElementById('students-list').innerHTML = html;
+                document.getElementById('loading').style.display = 'none';
+            } catch(e) {
+                document.getElementById('error-message').innerHTML = 'Ошибка: ' + e.message;
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        async function loadTeachers() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                const response = await fetch('/teachers');
+                const data = await response.json();
+                let html = '<ul>';
+                for (let t of data) {
+                    html += '<li>ID: ' + t.id + ', ' + t.first_name + ' ' + t.last_name + ', ' + t.position + '</li>';
+                }
+                html += '</ul>';
+                document.getElementById('teachers-list').innerHTML = html;
+                document.getElementById('loading').style.display = 'none';
+            } catch(e) {
+                document.getElementById('error-message').innerHTML = 'Ошибка: ' + e.message;
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        async function loadSchedule() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                let url = '/schedule';
+                const group = document.getElementById('schedule-group').value;
+                const teacherId = document.getElementById('schedule-teacher').value;
+                if (group || teacherId) {
+                    url += '?';
+                    if (group) url += 'group=' + group;
+                    if (teacherId) url += (group ? '&' : '') + 'teacher_id=' + teacherId;
+                }
+                const response = await fetch(url);
+                const data = await response.json();
+                let html = '<ul>';
+                for (let item of data) {
+                    html += '<li>' + JSON.stringify(item) + '</li>';
+                }
+                html += '</ul>';
+                document.getElementById('schedule-list').innerHTML = html;
+                document.getElementById('loading').style.display = 'none';
+            } catch(e) {
+                document.getElementById('error-message').innerHTML = 'Ошибка: ' + e.message;
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        async function loadGrades() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                let url = '/grade';
+                const studentId = document.getElementById('grade-student').value;
+                if (studentId) url += '?student_id=' + studentId;
+                const response = await fetch(url);
+                const data = await response.json();
+                let html = '<ul>';
+                for (let g of data) {
+                    html += '<li>ID: ' + g.id + ', Студент: ' + g.student_id + ', Оценка: ' + g.grade + '</li>';
+                }
+                html += '</ul>';
+                document.getElementById('grades-list').innerHTML = html;
+                document.getElementById('loading').style.display = 'none';
+            } catch(e) {
+                document.getElementById('error-message').innerHTML = 'Ошибка: ' + e.message;
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        async function loadRetakes() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                let url = '/retake';
+                const studentId = document.getElementById('retake-student').value;
+                if (studentId) url += '?student_id=' + studentId;
+                const response = await fetch(url);
+                const data = await response.json();
+                let html = '<ul>';
+                for (let r of data) {
+                    html += '<li>ID: ' + r.id + ', Студент: ' + r.student_id + ', Предмет: ' + r.subject + '</li>';
+                }
+                html += '</ul>';
+                document.getElementById('retakes-list').innerHTML = html;
+                document.getElementById('loading').style.display = 'none';
+            } catch(e) {
+                document.getElementById('error-message').innerHTML = 'Ошибка: ' + e.message;
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        async function loadAllRetakes() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                const response = await fetch('/retake/all');
+                const data = await response.json();
+                let html = '<ul>';
+                for (let r of data) {
+                    html += '<li>ID: ' + r.id + ', Студент: ' + r.student_id + ', Предмет: ' + r.subject + '</li>';
+                }
+                html += '</ul>';
+                document.getElementById('retakes-list').innerHTML = html;
+                document.getElementById('loading').style.display = 'none';
+            } catch(e) {
+                document.getElementById('error-message').innerHTML = 'Ошибка: ' + e.message;
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        async function loadPayments() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                let url = '/payment';
+                const studentId = document.getElementById('payment-student').value;
+                if (studentId) url += '?student_id=' + studentId;
+                const response = await fetch(url);
+                const data = await response.json();
+                let html = '<ul>';
+                for (let p of data) {
+                    html += '<li>ID: ' + p.id + ', Студент: ' + p.student_id + ', Сумма: ' + p.amount + '</li>';
+                }
+                html += '</ul>';
+                document.getElementById('payments-list').innerHTML = html;
+                document.getElementById('loading').style.display = 'none';
+            } catch(e) {
+                document.getElementById('error-message').innerHTML = 'Ошибка: ' + e.message;
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

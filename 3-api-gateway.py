@@ -1,25 +1,68 @@
 # Реализация шлюза API Gateway
 
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import httpx
 import logging
+import os
 
 # Настройка логирования для вывода информации о запросах
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = FastAPI(title="API Gateway Университета", version="1.0.0")
 
-# Конфигурация URL микросервисов (ПОРТЫ ДОЛЖНЫ СОВПАДАТЬ С ВАШИМИ СЕРВИСАМИ)
-STUDENT_SERVICE     = "http://127.0.0.1:5001" 
-TEACHER_SERVICE     = "http://127.0.0.1:5002"
-SCHEDULE_SERVICE    = "http://127.0.0.1:5003" 
-GRADE_SERVICE       = "http://127.0.0.1:5004"
-RETAKE_SERVICE      = "http://127.0.0.1:5005" 
-PAYMENT_SERVICE     = "http://127.0.0.1:5006"
-INSTRUCTION_SERVICE = "http://127.0.0.1:5007"
+# Подключение статических файлов (фронтенд)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Конфигурация URL микросервисов
+# В Docker Compose используем имена сервисов, локально - 127.0.0.1
+USE_DOCKER = os.getenv("DOCKER", "false").lower() == "true"
+
+if USE_DOCKER:
+    # В Docker Compose сервисы доступны по именам
+    STUDENT_SERVICE     = "http://student-service:5001"
+    TEACHER_SERVICE     = "http://teacher-service:5002"
+    SCHEDULE_SERVICE    = "http://schedule-service:5003"
+    GRADE_SERVICE       = "http://grade-service:5004"
+    RETAKE_SERVICE      = "http://retake-service:5005"
+    PAYMENT_SERVICE     = "http://payment-service:5006"
+else:
+    # Локальный запуск
+    STUDENT_SERVICE     = "http://127.0.0.1:5001"
+    TEACHER_SERVICE     = "http://127.0.0.1:5002"
+    SCHEDULE_SERVICE    = "http://127.0.0.1:5003"
+    GRADE_SERVICE       = "http://127.0.0.1:5004"
+    RETAKE_SERVICE      = "http://127.0.0.1:5005"
+    PAYMENT_SERVICE     = "http://127.0.0.1:5006"
 # SERVICES_URLS = { ... } # Можно использовать словарь для масштабирования
 
 TIMEOUT = 5.0 # Таймаут для запросов
+
+# --- Корневой маршрут (возвращает фронтенд) ---
+@app.get("/", tags=["Информация"])
+async def root():
+    """Корневой эндпоинт - возвращает фронтенд"""
+    return FileResponse("static/index.html")
+
+# --- API Info маршрут ---
+@app.get("/api/info", tags=["Информация"])
+async def api_info():
+    """Информация об API Gateway"""
+    return {
+        "message": "API Gateway Университета",
+        "version": "1.0.0",
+        "documentation": "/docs",
+        "openapi_schema": "/openapi.json",
+        "endpoints": {
+            "students": "/students",
+            "teachers": "/teachers",
+            "schedule": "/schedule",
+            "grades": "/grade",
+            "retakes": "/retake",
+            "payments": "/payment"
+        }
+    }
 
 # --- Маршруты для СТУДЕНТОВ (Student Service) ---
 
@@ -217,29 +260,3 @@ async def create_payment(payment_data: dict):
             return response.json()
     except httpx.HTTPError as e:
         raise HTTPException(status_code=503, detail=f"Payment service error: {str(e)}")
-
-# --- Маршруты для ИНСТРУКЦИЙ (Instruction Service) ---
-
-@app.get("/instruction", tags=["Инструкции"])
-async def get_instructions():
-    """Получить список всех инструкций и документов. UC-5."""
-    try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.get(f'{INSTRUCTION_SERVICE}/instruction')
-            response.raise_for_status()
-            return response.json()
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=503, detail=f"Instruction service unavailable: {str(e)}")
-
-@app.get("/instruction/{instruction_id}", tags=["Инструкции"])
-async def get_instruction(instruction_id: int):
-    """Получить конкретную инструкцию по ID."""
-    try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.get(f'{INSTRUCTION_SERVICE}/instruction/{instruction_id}')
-            if response.status_code == 404:
-                raise HTTPException(status_code=404, detail="Instruction not found")
-            response.raise_for_status()
-            return response.json()
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=503, detail=f"Instruction service error: {str(e)}")

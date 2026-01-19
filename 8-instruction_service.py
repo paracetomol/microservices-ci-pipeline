@@ -42,4 +42,4 @@ def get_instruction(instruction_id):
 # --- 3. Запуск приложения ---
 if __name__ == '__main__':
     print(f"Запуск Instruction Service на порту {PORT}...")
-    app.run(port=PORT, debug=True)
+    app.run(host='0.0.0.0', port=PORT, debug=True)

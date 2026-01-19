@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   student-service:
     build: .
@@ -49,18 +47,12 @@ services:
       - "5006:5006"
     restart: unless-stopped
 
-  instruction-service:
-    build: .
-    container_name: instruction-service
-    command: python 8-instruction_service.py
-    ports:
-      - "5007:5007"
-    restart: unless-stopped
-
   api-gateway:
     build: .
     container_name: api-gateway
     command: uvicorn 3-api-gateway:app --host 0.0.0.0 --port 8000
+    environment:
+      - DOCKER=true
     ports:
       - "8000:8000"
     depends_on:
@@ -70,6 +62,5 @@ services:
       - grade-service
       - retake-service
       - payment-service
-      - instruction-service
     restart: unless-stopped
 
