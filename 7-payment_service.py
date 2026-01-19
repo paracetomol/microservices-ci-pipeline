@@ -2,11 +2,11 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# --- Конфигурация ---
-PORT = 5006 # Порт для Сервиса Оплаты
+
+PORT = 5006 
 next_id = 3 
 
-# --- 1. Встроенное хранилище данных ---
+
 payments = [
     {
         "id": 1,
@@ -26,10 +26,7 @@ payments = [
     }
 ]
 
-# --- 2. Маршруты (Endpoints) ---
 
-# GET /payment - Получить историю платежей
-# Соответствует UC-4 (Студент)
 @app.route('/payment', methods=['GET'])
 def get_payments():
     """Получить список платежей. Поддерживает фильтрацию по student_id."""
@@ -37,15 +34,14 @@ def get_payments():
     
     filtered_payments = payments
     
-    # Фильтрация по ID студента
+    
     if student_id_filter and student_id_filter.isdigit():
         student_id = int(student_id_filter)
         filtered_payments = [p for p in filtered_payments if p['student_id'] == student_id]
         
     return jsonify(filtered_payments)
 
-# POST /payment - Создать новый платеж (имитация оплаты)
-# Соответствует UC-4 (Студент)
+
 @app.route('/payment', methods=['POST'])
 def create_payment():
     """Создать новую запись о платеже"""
@@ -65,7 +61,7 @@ def create_payment():
     
     return jsonify(new_payment), 201
 
-# --- 3. Запуск приложения ---
+
 if __name__ == '__main__':
     print(f"Запуск Payment Service на порту {PORT}...")
     app.run(host='0.0.0.0', port=PORT, debug=True)

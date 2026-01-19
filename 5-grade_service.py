@@ -2,11 +2,11 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# --- Конфигурация ---
-PORT = 5004 # Порт для Сервиса Успеваемости
+
+PORT = 5004 
 next_id = 3 
 
-# --- 1. Встроенное хранилище данных ---
+
 grades = [
     {
         "id": 1,
@@ -26,9 +26,7 @@ grades = [
     }
 ]
 
-# --- 2. Маршруты (Endpoints) ---
 
-# GET /grade - Получить успеваемость
 @app.route('/grade', methods=['GET'])
 def get_grades():
     """Получить список оценок. Поддерживает фильтрацию по student_id."""
@@ -36,14 +34,13 @@ def get_grades():
     
     filtered_grades = grades
     
-    # Фильтрация по ID студента (основной сценарий)
+    
     if student_id_filter and student_id_filter.isdigit():
         student_id = int(student_id_filter)
         filtered_grades = [g for g in filtered_grades if g['student_id'] == student_id]
         
     return jsonify(filtered_grades)
 
-# POST /grade - Добавить новую оценку (доступно Администратору/Преподавателю)
 @app.route('/grade', methods=['POST'])
 def create_grade():
     """Создать новую запись об оценке"""
@@ -62,7 +59,7 @@ def create_grade():
     
     return jsonify(new_grade), 201
 
-# --- 3. Запуск приложения ---
+
 if __name__ == '__main__':
     print(f"Запуск Grade Service на порту {PORT}...")
     app.run(host='0.0.0.0', port=PORT, debug=True)

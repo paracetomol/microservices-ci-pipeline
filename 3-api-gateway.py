@@ -1,4 +1,4 @@
-# Реализация шлюза API Gateway
+
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -7,16 +7,14 @@ import httpx
 import logging
 import os
 
-# Настройка логирования для вывода информации о запросах
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = FastAPI(title="API Gateway Университета", version="1.0.0")
 
-# Подключение статических файлов (фронтенд)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Конфигурация URL микросервисов
-# В Docker Compose используем имена сервисов, локально - 127.0.0.1
+
 USE_DOCKER = os.getenv("DOCKER", "false").lower() == "true"
 
 if USE_DOCKER:
@@ -39,13 +37,13 @@ else:
 
 TIMEOUT = 5.0 # Таймаут для запросов
 
-# --- Корневой маршрут (возвращает фронтенд) ---
+
 @app.get("/", tags=["Информация"])
 async def root():
     """Корневой эндпоинт - возвращает фронтенд"""
     return FileResponse("static/index.html")
 
-# --- API Info маршрут ---
+
 @app.get("/api/info", tags=["Информация"])
 async def api_info():
     """Информация об API Gateway"""
@@ -64,20 +62,20 @@ async def api_info():
         }
     }
 
-# --- Маршруты для СТУДЕНТОВ (Student Service) ---
+
 
 @app.get("/students", tags=["Студенты"])
 async def get_students():
     logging.info("Request received: GET /students")
     try:
-        # Асинхронный HTTP-клиент для запроса к бэкенду
+        
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             response = await client.get(f'{STUDENT_SERVICE}/students')
-            response.raise_for_status() # Вызывает исключение при ошибках HTTP (4xx или 5xx)
+            response.raise_for_status() 
             return response.json()
     except httpx.HTTPError as e:
         logging.error(f"Student service error: {e}")
-        # Возвращаем ошибку 503 (Service Unavailable)
+     
         raise HTTPException(status_code=503, detail=f"Student service unavailable: {str(e)}")
 
 @app.get("/students/{student_id}", tags=["Студенты"])
@@ -94,7 +92,7 @@ async def get_student(student_id: int):
         logging.error(f"Student service error: {e}")
         raise HTTPException(status_code=503, detail=f"Student service error: {str(e)}")
 
-# --- Маршруты для ПРЕПОДАВАТЕЛЕЙ (Teacher Service) ---
+
 
 @app.get("/teachers", tags=["Преподаватели"])
 async def get_teachers():
@@ -120,7 +118,7 @@ async def create_teacher(teacher: dict):
         logging.error(f"Teacher service error: {e}")
         raise HTTPException(status_code=503, detail=f"Teacher service error: {str(e)}")
         
-# --- Маршруты для РАСПИСАНИЯ (Schedule Service) ---
+
 
 @app.get("/schedule", tags=["Расписание"])
 async def get_schedule(group: str = None, teacher_id: int = None):
@@ -155,7 +153,7 @@ async def create_schedule_item(item: dict):
         logging.error(f"Schedule service error: {e}")
         raise HTTPException(status_code=503, detail=f"Schedule service error: {str(e)}")
     
-# --- Маршруты для УСПЕВАЕМОСТИ (Grade Service) ---
+
 
 @app.get("/grade", tags=["Успеваемость"])
 async def get_grades(student_id: int = None):
@@ -166,7 +164,7 @@ async def get_grades(student_id: int = None):
     logging.info("Request received: GET /grade")
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            # Передаем query-параметр student_id
+           
             params = {}
             if student_id is not None:
                 params['student_id'] = student_id
@@ -194,7 +192,7 @@ async def create_grade(grade_data: dict):
         logging.error(f"Grade service error: {e}")
         raise HTTPException(status_code=503, detail=f"Grade service error: {str(e)}")   
 
-# --- Маршруты для ПЕРЕСДАЧ (Retake Service) ---
+# пересдачи (Retake Service) ---
 
 @app.get("/retake", tags=["Пересдачи"])
 async def get_retakes(student_id: int = None):
@@ -233,7 +231,7 @@ async def create_retake(retake_data: dict):
     except httpx.HTTPError as e:
         raise HTTPException(status_code=503, detail=f"Retake service error: {str(e)}")
 
-# --- Маршруты для ОПЛАТЫ (Payment Service) ---
+# оплата
 
 @app.get("/payment", tags=["Оплата"])
 async def get_payments(student_id: int = None):

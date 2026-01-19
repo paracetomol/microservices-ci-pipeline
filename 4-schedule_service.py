@@ -2,16 +2,16 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# --- Конфигурация ---
-PORT = 5003 # Порт для Сервиса Расписания
+
+PORT = 5003 
 next_id = 3 
 
-# --- 1. Встроенное хранилище данных ---
+
 schedule_items = [
     {
         "id": 1,
         "subject": "Базы данных",
-        "teacher_id": 1, # ID преподавателя (Анна Смирнова)
+        "teacher_id": 1, 
         "group": "ИВТ-201",
         "day": "Понедельник",
         "time": "10:00 - 11:30",
@@ -20,7 +20,7 @@ schedule_items = [
     {
         "id": 2,
         "subject": "Экономика",
-        "teacher_id": 2, # ID преподавателя (Сергей Козлов)
+        "teacher_id": 2, 
         "group": "ЭК-105",
         "day": "Среда",
         "time": "13:00 - 14:30",
@@ -28,9 +28,7 @@ schedule_items = [
     }
 ]
 
-# --- 2. Маршруты (Endpoints) ---
 
-# GET /schedule - Получить все расписание или отфильтровать по параметрам
 @app.route('/schedule', methods=['GET'])
 def get_schedule():
     """Получить расписание. Поддерживает фильтрацию по group и teacher_id."""
@@ -50,7 +48,7 @@ def get_schedule():
         
     return jsonify(filtered_schedule)
 
-# POST /schedule - Добавить новое занятие в расписание
+
 @app.route('/schedule', methods=['POST'])
 def create_schedule_item():
     """Создать новую запись расписания"""
@@ -66,7 +64,6 @@ def create_schedule_item():
     
     return jsonify(new_item), 201
 
-# --- 3. Запуск приложения ---
 if __name__ == '__main__':
     print(f"Запуск Schedule Service на порту {PORT}...")
     app.run(host='0.0.0.0', port=PORT, debug=True)
